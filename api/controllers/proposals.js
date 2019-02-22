@@ -19,25 +19,24 @@ exports.getOne = (req, res) => {
 
 // /proposals
 exports.list = (req, res) => {
-    const query = `SELECT DISTINCT
-            CAST(proposal.proposal_id AS INT),
-            proposal.short_name,
-            proposal.prop_submit,
-            TRIM(CONCAT(proposal.pi_firstname, ' ', proposal.pi_lastname)) AS pi_name,
+    const query = `SELECT "Proposal"."ProposalID",                  
+            "Proposal"."ShortTitle",
+            "Proposal"."dateSubmitted",                                                                                                      
+            TRIM(CONCAT("Submitter"."submitterFirstName", ' ', "Submitter"."submitterLastName")) AS pi_name,
             name.description AS proposal_status,
             name2.description AS tic_name,
             name3.description AS org_name,
             name4.description AS therapeutic_area
-        FROM proposal
-        INNER JOIN study ON proposal.proposal_id=study.proposal_id
-        INNER JOIN name ON name.index=CAST(proposal.protocol_status AS VARCHAR)
-        INNER JOIN name name2 ON name2.index=CAST(proposal.tic_ric_assign_v2 AS VARCHAR) AND name2."column"='tic_ric_assign_v2'
-        INNER JOIN name name3 ON name3.index=CAST(proposal.org_name AS VARCHAR) AND name3."column"='org_name'
-        INNER JOIN name name4 ON name4.index=CAST(study.theraputic_area AS VARCHAR)
-        WHERE name."column"='protocol_status'
-          AND name2."column"='tic_ric_assign_v2'
-          AND name4."column"='theraputic_area'
-        ORDER BY proposal_id;`
+        FROM "Proposal"
+        INNER JOIN "Submitter" ON "Proposal"."ProposalID"="Submitter"."ProposalID"
+        INNER JOIN "ProposalDetails" ON "Proposal"."ProposalID"="ProposalDetails"."ProposalID"
+        LEFT JOIN "AssignProposal" ON "Proposal"."ProposalID"="AssignProposal"."ProposalID"
+        INNER JOIN name ON name.index="Proposal"."proposalStatus" AND name."column"='proposalStatus'
+        LEFT JOIN name name2 ON name2.index="AssignProposal"."assignToInstitution" AND name2."column"='assignToInstitution'
+        INNER JOIN name name3 ON name3.index="Submitter"."submitterInstitution" AND name3."column"='submitterInstitution'
+        INNER JOIN name name4 ON name4.index="ProposalDetails"."therapeuticArea" AND name4."column"='therapeuticArea'
+WHERE "Proposal"."ProposalID" NOT IN (168,200,220,189,355,390,272,338,394,286,306,401)
+        ORDER BY "ProposalID";`
     db.any(query)
         .then(data => {
             data.forEach(proposal => {
